@@ -12,12 +12,15 @@ dotenv.config();
  *   npm run db:setup
  */
 async function main(): Promise<void> {
+  // Railway 强制 MySQL 走 SSL；不配置会卡在 SSL 握手
+  const sslEnabled = !['false', '0', 'off'].includes((process.env.DB_SSL || 'true').toLowerCase());
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST || '127.0.0.1',
     port: Number(process.env.DB_PORT || 3306),
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASS || 'root123',
     multipleStatements: true,
+    ...(sslEnabled ? { ssl: { rejectUnauthorized: false } } : {}),
   });
 
   const initSql = fs.readFileSync(path.join(__dirname, '..', '..', 'db', 'init.sql'), 'utf8');
