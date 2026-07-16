@@ -10,7 +10,8 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
 fi
 
 echo "[start] starting MySQL..."
-mysqld_safe --user=mysql >/var/log/mysqld.log 2>&1 &
+# 内存调优：在 Railway 512MB 容器内把 MariaDB 内存占用压到最低，避免 OOM
+mysqld_safe --user=mysql --innodb-buffer-pool-size=64M --key-buffer-size=16M --max-connections=50 >/var/log/mysqld.log 2>&1 &
 for i in $(seq 1 60); do
   if mysqladmin ping --silent 2>/dev/null; then echo "[start] MySQL is up"; break; fi
   sleep 1

@@ -1,0 +1,13 @@
+# 学伴 StudyBuddy 后端 · Railway 部署配置
+# Railway 会自动读取本文件并注入 PORT 环境变量（start.sh 已读取 $PORT 转发给 Node）。
+# 单容器内同时运行 Node 20 + MariaDB + Redis，无需任何外部数据库账号（零运维）。
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.render"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

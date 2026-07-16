@@ -1,6 +1,6 @@
-# 学伴 StudyBuddy 后端 · Render 自包含部署镜像
+# 学伴 StudyBuddy 后端 · 零运维自包含部署镜像（Render / Railway 通用）
 # 单容器内同时运行 Node 20 + MariaDB(兼容 MySQL 8 语法) + Redis，
-# 适合 Render.com 零运维：无需任何外部数据库账号，仅暴露一个 Web Service。
+# 无需任何外部数据库账号，仅暴露一个 Web Service。Railway 由 railway.toml 引用本文件。
 FROM node:20-bookworm
 
 # 系统依赖：MariaDB 服务端（兼容 init.sql 的 MySQL 8 语法）+ Redis 服务端
