@@ -17,27 +17,37 @@ const regSchema = z.object({
 });
 
 router.post('/register', async (req, res) => {
-  const parsed = regSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ code: 400, message: parsed.error.message });
-  const { role, name, phone, password, grade, school } = parsed.data;
-  const exists = await query('SELECT id FROM users WHERE phone=?', [phone]);
-  if (Array.isArray(exists) && exists.length) return res.status(409).json({ code: 409, message: '手机号已注册' });
-  const hash = await bcrypt.hash(password, 10);
-  const r = await query('INSERT INTO users(role,name,phone,password_hash,grade,school) VALUES(?,?,?,?,?,?)', [role, name, phone, hash, grade ?? null, school ?? null]);
-  const uid = (r as any).insertId;
-  const token = signToken({ uid, role });
-  res.json({ code: 0, token, user: { id: uid, role, name } });
+  try {
+    const parsed = regSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ code: 400, message: parsed.error.message });
+    const { role, name, phone, password, grade, school } = parsed.data;
+    const exists = await query('SELECT id FROM users WHERE phone=?', [phone]);
+    if (Array.isArray(exists) && exists.length) return res.status(409).json({ code: 409, message: '手机号已注册' });
+    const hash = await bcrypt.hash(password, 10);
+    const r = await query('INSERT INTO users(role,name,phone,password_hash,grade,school) VALUES(?,?,?,?,?,?)', [role, name, phone, hash, grade ?? null, school ?? null]);
+    const uid = (r as any).insertId;
+    const token = signToken({ uid, role });
+    res.json({ code: 0, token, user: { id: uid, role, name } });
+  } catch (e: any) {
+    console.error('[auth/register]', e?.message || e);
+    res.status(503).json({ code: 503, message: '服务暂时不可用，请稍后重试' });
+  }
 });
 
 router.post('/login', async (req, res) => {
-  const { phone, password } = req.body || {};
-  const rows = await query<User>('SELECT * FROM users WHERE phone=?', [phone]);
-  const u = Array.isArray(rows) ? rows[0] : undefined;
-  if (!u || !u.password_hash || !(await bcrypt.compare(password, u.password_hash))) {
-    return res.status(401).json({ code: 401, message: '账号或密码错误' });
+  try {
+    const { phone, password } = req.body || {};
+    const rows = await query<User>('SELECT * FROM users WHERE phone=?', [phone]);
+    const u = Array.isArray(rows) ? rows[0] : undefined;
+    if (!u || !u.password_hash || !(await bcrypt.compare(password, u.password_hash))) {
+      return res.status(401).json({ code: 401, message: '账号或密码错误' });
+    }
+    const token = signToken({ uid: u.id, role: u.role });
+    res.json({ code: 0, token, user: u });
+  } catch (e: any) {
+    console.error('[auth/login]', e?.message || e);
+    res.status(503).json({ code: 503, message: '服务暂时不可用，请稍后重试' });
   }
-  const token = signToken({ uid: u.id, role: u.role });
-  res.json({ code: 0, token, user: u });
 });
 
 router.get('/me', auth, async (req, res) => {
