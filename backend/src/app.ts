@@ -28,7 +28,11 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-app.get('/health', (_req: Request, res: Response) => res.json({ ok: true }));
+// BUILD_ID 用于确认线上运行的是哪次构建（排查 Railway 镜像缓存问题）
+const BUILD_ID = 'build-20260716-ssl-db-fix';
+app.get('/health', (_req: Request, res: Response) =>
+  res.json({ ok: true, buildId: BUILD_ID, time: new Date().toISOString() }),
+);
 
 // 数据库连通性探测（带 5s 超时，避免挂起）
 app.get('/health/db', async (_req: Request, res: Response) => {
