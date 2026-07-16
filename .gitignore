@@ -1,0 +1,19 @@
+# deps / build output
+node_modules/
+dist/
+*.log
+
+# 大文件构建产物（APK 等，不进 git，改由 EAS/发布渠道分发）
+builds/
+
+# 移动端子项目（自带独立 .git，Render 后端部署不需要；如需备份请单独建仓）
+mobile-app/
+
+# 本地工作记忆与内部规划文件
+.workbuddy/
+plan_raw.txt
+
+# 环境变量（切勿提交真实密钥）
+.env
+.env.*
+!.env.prod.example

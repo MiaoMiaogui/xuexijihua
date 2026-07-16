@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>初高中学习计划与打卡 APP · 信息架构与页面流程图</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f4f7f6;color:#22332e;margin:0;padding:32px;}
+  .wrap{max-width:980px;margin:0 auto;background:#fff;border-radius:18px;padding:32px 36px;box-shadow:0 8px 24px rgba(31,169,126,.08);}
+  h1{color:#15795b;font-size:24px;margin-top:0}
+  h2{color:#1FA97E;border-left:5px solid #1FA97E;padding-left:10px;margin-top:36px}
+  .meta{color:#7c8c86;font-size:13px;margin-bottom:8px}
+  .note{background:#E6F6F1;border-radius:12px;padding:14px 16px;font-size:13px;line-height:1.7;color:#15795b;margin:14px 0}
+  .legend{font-size:13px;color:#7c8c86;line-height:1.8}
+  pre.mermaid{background:#fafcfb;border:1px solid #e4ebe8;border-radius:12px;padding:8px;}
+  footer{margin-top:30px;color:#9aa;font-size:12px;text-align:center}
+  a{color:#1FA97E}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>初高中学习计划与打卡 APP<br>信息架构与页面流程图</h1>
+  <div class="meta">配套工程：<code>mobile-app/</code>（React Native）· <code>backend/</code>（Node.js + MySQL + Redis）</div>
+  <div class="note">设计原则：打卡 ≤ 1 次点击、计划制定 ≤ 3 步、护眼色系、家长/教师端不暴露学生细节。</div>
+
+  <h2>一、信息架构图（Information Architecture）</h2>
+  <pre class="mermaid">
+graph TD
+  App["学伴 App"] --> Role["身份选择 学生/家长/老师"]
+  App --> Tab["主框架 · 底部 TabBar"]
+  Tab --> Home["🏠 首页 今日任务/倒计时/Streak/进度环"]
+  Tab --> Plan["📅 计划 月周日历·任务"]
+  Tab --> CheckIn["✅ 打卡 一键/拍照/时长"]
+  Tab --> Stats["📊 统计 热力图/占比/趋势/徽章"]
+  Tab --> Profile["👤 我的 账号/设置/协同"]
+  Home --> AI["AI 规划 Banner → 计划向导"]
+  Home --> Cal["→ 计划日历"]
+  Plan --> Wizard["→ 计划向导(3步)"]
+  Profile --> Focus["🎯 专注模式 番茄钟"]
+  Profile --> Wrong["📕 错题本/薄弱点"]
+  Profile --> Collab["👨‍👩‍👦 家长/教师协同"]
+  Profile --> Switch["切换身份 / 退出"]
+  </pre>
+
+  <h2>二、核心页面流程图（Page Flow）</h2>
+  <pre class="mermaid">
+flowchart TD
+  Start(["打开 App"]) --> Role{"选择身份"}
+  Role -->|学生| Home
+  Role -->|家长| PV["家长协同视图 时长/完成率/异常"]
+  Role -->|老师| TV["教师协同视图 布置任务/班级数据"]
+  Home["首页"] -->|勾选任务| Done["标记完成·进度环更新"]
+  Home -->|点击 AI Banner| W1
+  Home -->|点击日历卡片| Plan
+  W1["计划向导·第1步 目标/周期/科目"] --> W2["第2步 任务类型/时长"]
+  W2 --> W3["第3步 AI 智能排课结果"]
+  W3 -->|保存到日历| Plan
+  Plan["计划/日历"] -->|点选某日| DayTasks["当日任务列表"]
+  Plan -->|制定计划| W1
+  CheckIn["打卡"] -->|一键打卡| StreakUp["连续打卡 +1·记录流水"]
+  CheckIn -->|拍照/时长| Log["打卡记录"]
+  Profile["我的"] -->|专注模式| Focus["番茄钟 25/5"]
+  Profile -->|错题本| Wrong["薄弱点列表"]
+  Profile -->|协同| Collab["家长/教师视图"]
+  Profile -->|退出| Start
+  </pre>
+
+  <h2>三、前端页面 ↔ 后端 API 调用关系</h2>
+  <pre class="mermaid">
+flowchart LR
+  Home -->|GET /api/tasks/today| BE[(Backend)]
+  CheckIn -->|POST /api/checkins| BE
+  PlanWizard -->|POST /api/plans/generate| BE
+  Stats -->|GET /api/stats/overview| BE
+  Wrong -->|GET-POST /api/wrong/weak-points| BE
+  Profile -->|GET /api/exams| BE
+  BE --> MySQL[("MySQL 8张核心表")]
+  BE --> Redis[("Redis 缓存")]
+  BE -.->|计划推荐算法| Algo["planGenerator.ts<br/>目标倒推+艾宾浩斯+精力曲线"]
+  </pre>
+
+  <h2>四、关键设计说明</h2>
+  <div class="legend">
+    1. <b>信息架构</b>：以首页为中枢，五大 Tab 覆盖 MVP 到高阶能力；打卡为底部中央 FAB，符合“≤1 次点击”原则。<br>
+    2. <b>角色差异化</b>：学生端最全；家长/教师端为只读协同视图，仅暴露汇总指标与异常提醒，保护隐私（方案 2.5）。<br>
+    3. <b>学习科学闭环</b>：计划向导(目标倒推) → 日历执行 → 打卡 → 统计反馈 → 错题再练。<br>
+    4. <b>激励与防 burnout</b>：连续打卡、徽章、热力图正向反馈；番茄钟与休息提醒防止虚假勤奋（方案 2.3）。<br>
+    5. <b>性能</b>：高频读走 Redis 缓存，写后主动失效，降低 MySQL 压力（方案 2.4）。
+  </div>
+
+  <footer>Generated for 初高中学习计划与打卡 APP 产品方案 · 学伴 StudyBuddy</footer>
+</div>
+<script>mermaid.initialize({startOnLoad:true,theme:'base',themeVariables:{primaryColor:'#E6F6F1',lineColor:'#15795b',primaryTextColor:'#22332e'}});</script>
+</body>
+</html>

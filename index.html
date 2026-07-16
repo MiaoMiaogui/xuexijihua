@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>学伴 · 初高中学习计划与打卡</title>
+<style>
+  :root{
+    --primary:#1FA97E;        /* 护眼主色：青绿 */
+    --primary-soft:#E6F6F1;
+    --primary-dark:#15795B;
+    --accent:#FF8C42;         /* 行动/紧急 暖橙 */
+    --accent-soft:#FFF1E6;
+    --bg:#EEF3F1;
+    --surface:#FFFFFF;
+    --text:#22332E;
+    --muted:#7C8C86;
+    --border:#E4EBE8;
+    --danger:#E57373;
+    --warn:#F2B84B;
+    --shadow:0 8px 24px rgba(31,169,126,.10);
+    --radius:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#dfeae6 0%,#eef3f1 50%,#e3ece9 100%);
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:24px;color:var(--text);
+  }
+
+  /* ===== 手机外壳 ===== */
+  .device{
+    width:390px;height:844px;background:#0e1512;border-radius:46px;
+    padding:11px;box-shadow:0 30px 70px rgba(0,0,0,.32),inset 0 0 0 2px #2a3330;
+    position:relative;flex:none;
+  }
+  .screen-wrap{
+    width:100%;height:100%;background:var(--bg);border-radius:36px;overflow:hidden;
+    position:relative;display:flex;flex-direction:column;
+  }
+  .statusbar{
+    height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:14px;font-weight:600;color:var(--text);background:var(--surface);
+    z-index:30;
+  }
+  .statusbar .icons{display:flex;gap:6px;align-items:center}
+  .statusbar svg{display:block}
+
+  /* ===== 内容滚动区 ===== */
+  .viewport{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;scroll-behavior:smooth}
+  .viewport::-webkit-scrollbar{display:none}
+  .page{display:none;padding:16px 16px 100px;min-height:100%}
+  .page.active{display:block;animation:fade .28s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ===== 底部Tab ===== */
+  .tabbar{
+    position:absolute;left:0;right:0;bottom:0;height:76px;background:rgba(255,255,255,.94);
+    backdrop-filter:blur(14px);border-top:1px solid var(--border);
+    display:flex;align-items:flex-start;justify-content:space-around;padding:8px 6px 14px;z-index:25;
+  }
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);
+    font-size:11px;background:none;border:none;cursor:pointer;transition:color .2s}
+  .tab svg{width:24px;height:24px}
+  .tab.active{color:var(--primary)}
+  .fab{
+    width:56px;height:56px;margin-top:-26px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px rgba(31,169,126,.45);
+    cursor:pointer;border:4px solid var(--surface);
+  }
+  .fab svg{width:26px;height:26px;color:#fff}
+
+  /* ===== 通用组件 ===== */
+  .card{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .row{display:flex;align-items:center;gap:10px}
+  .between{justify-content:space-between}
+  .muted{color:var(--muted)}
+  .small{font-size:12px}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+  h2.page-title{font-size:20px;font-weight:800;margin-bottom:2px}
+  .sub{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;border-radius:14px;
+    font-size:15px;font-weight:700;border:none;cursor:pointer;transition:transform .12s,box-shadow .2s}
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 6px 14px rgba(31,169,126,.35)}
+  .btn-ghost{background:var(--primary-soft);color:var(--primary-dark)}
+  .btn-block{width:100%}
+  .btn-accent{background:var(--accent);color:#fff}
+
+  /* ===== 首页 ===== */
+  .hero{background:linear-gradient(135deg,#1FA97E,#15795B);border-radius:22px;padding:18px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden}
+  .hero:after{content:"";position:absolute;right:-30px;top:-30px;width:140px;height:140px;background:rgba(255,255,255,.08);border-radius:50%}
+  .hero .greet{font-size:13px;opacity:.85}
+  .hero h1{font-size:22px;font-weight:800;margin:2px 0 12px}
+  .hero .streak{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700}
+  .stat2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .stat2 .card{margin:0}
+  .stat-num{font-size:26px;font-weight:800;color:var(--primary-dark)}
+  .ring-wrap{display:flex;align-items:center;gap:14px}
+  .task{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}
+  .task:last-child{border-bottom:none}
+  .check{width:24px;height:24px;border-radius:8px;border:2px solid var(--border);flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s}
+  .check.done{background:var(--primary);border-color:var(--primary)}
+  .task.done .t-name{text-decoration:line-through;color:var(--muted)}
+  .t-main{flex:1;min-width:0}
+  .t-name{font-size:15px;font-weight:600}
+  .t-meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .subj-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+  .ai-banner{background:linear-gradient(135deg,#FFF1E6,#FFE3CC);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .ai-banner .ic{width:42px;height:42px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .ai-banner p{font-size:12px;color:#9a5a25;line-height:1.4}
+  .ai-banner b{font-size:14px;color:#7a3d10}
+
+  /* ===== 计划/日历 ===== */
+  .seg{display:flex;background:var(--primary-soft);border-radius:12px;padding:4px;margin-bottom:14px}
+  .seg button{flex:1;border:none;background:none;padding:8px;border-radius:9px;font-weight:700;color:var(--muted);cursor:pointer;font-size:14px}
+  .seg button.on{background:#fff;color:var(--primary-dark);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+  .cal .dow{font-size:11px;color:var(--muted);padding:4px 0}
+  .cal .day{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;cursor:pointer;position:relative;color:var(--text)}
+  .cal .day.today{background:var(--primary);color:#fff;font-weight:800}
+  .cal .day.sel{outline:2px solid var(--primary);outline-offset:-2px}
+  .cal .day .dots{display:flex;gap:2px;margin-top:2px}
+  .cal .day .dots i{width:4px;height:4px;border-radius:50%}
+  .day-detail h3{font-size:15px;margin:4px 0 10px}
+  .empty{padding:26px;text-align:center;color:var(--muted);font-size:13px}
+
+  /* ===== 统计 ===== */
+  .heat{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;margin-top:8px}
+  .heat i{aspect-ratio:1;border-radius:3px;background:var(--primary-soft)}
+  .heat i.l1{background:#BFE6D8}.heat i.l2{background:#7FCBB0}.heat i.l3{background:#3DAD8A}.heat i.l4{background:#15795B}
+  .donut-row{display:flex;align-items:center;gap:14px}
+  .legend{flex:1;display:flex;flex-direction:column;gap:7px}
+  .legend .li{display:flex;align-items:center;gap:8px;font-size:13px}
+  .legend .bar{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+  .legend .bar span{display:block;height:100%;border-radius:4px}
+  .trend{display:flex;align-items:flex-end;gap:6px;height:120px;margin-top:10px}
+  .trend .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .trend .bar2{width:100%;background:linear-gradient(180deg,var(--primary),var(--primary-dark));border-radius:6px 6px 0 0;transition:height .5s}
+  .trend .lab{font-size:10px;color:var(--muted)}
+  .badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .badge{background:var(--surface);border-radius:14px;padding:12px 6px;text-align:center;box-shadow:var(--shadow)}
+  .badge .em{font-size:26px;filter:grayscale(1);opacity:.4}
+  .badge.got .em{filter:none;opacity:1}
+  .badge .nm{font-size:11px;margin-top:4px;color:var(--muted)}
+  .badge.got .nm{color:var(--text);font-weight:700}
+
+  /* ===== 我的 ===== */
+  .profile-card{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#fff,#f3faf7);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+  .avatar{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;flex:none}
+  .menu{background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px}
+  .menu .mi{display:flex;align-items:center;gap:12px;padding:15px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+  .menu .mi:last-child{border-bottom:none}
+  .menu .mi .m-ic{width:34px;height:34px;border-radius:10px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+  .menu .mi .m-t{flex:1;font-size:15px;font-weight:600}
+  .menu .mi .m-ar{color:var(--muted)}
+
+  /* ===== 弹层 ===== */
+  .overlay{position:absolute;inset:0;background:rgba(20,30,26,.45);z-index:50;display:none;align-items:flex-end;justify-content:center}
+  .overlay.show{display:flex;animation:fade .2s}
+  .sheet{background:var(--surface);width:100%;border-radius:24px 24px 0 0;padding:20px 18px 26px;max-height:88%;overflow-y:auto}
+  .sheet h3{font-size:18px;font-weight:800;margin-bottom:14px}
+  .sheet .handle{width:38px;height:4px;background:var(--border);border-radius:3px;margin:0 auto 14px}
+  .close-x{position:absolute;top:18px;right:18px;font-size:22px;color:var(--muted);cursor:pointer;z-index:5}
+
+  /* 打卡面板 */
+  .big-check{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));margin:6px auto 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;cursor:pointer;box-shadow:0 10px 26px rgba(31,169,126,.45);transition:transform .15s}
+  .big-check:active{transform:scale(.94)}
+  .big-check .n{font-size:34px;font-weight:800;line-height:1}
+  .big-check .t{font-size:13px;opacity:.9;margin-top:4px}
+  .subj-pick{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px}
+  .subj-pick .sp{padding:7px 13px;border-radius:20px;background:var(--primary-soft);color:var(--primary-dark);font-size:13px;font-weight:600;cursor:pointer;border:2px solid transparent}
+  .subj-pick .sp.on{border-color:var(--primary);background:#fff}
+  .mini-row{display:flex;gap:10px;margin-top:6px}
+  .mini-row .btn{flex:1}
+
+  /* 计划向导 */
+  .step{display:none}.step.on{display:block;animation:fade .25s}
+  .steps-bar{display:flex;align-items:center;gap:8px;margin-bottom:18px}
+  .steps-bar .s{flex:1;height:5px;border-radius:3px;background:var(--border)}
+  .steps-bar .s.on{background:var(--primary)}
+  .opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+  .opt{border:2px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;text-align:center;transition:.15s}
+  .opt .em{font-size:26px}
+  .opt .nm{font-size:14px;font-weight:700;margin-top:4px}
+  .opt.on{border-color:var(--primary);background:var(--primary-soft)}
+  .field{margin:12px 0}
+  .field label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+  .field input,.field select{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;background:#fff;color:var(--text)}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--primary)}
+  .gen-result{background:var(--primary-soft);border-radius:14px;padding:14px;margin-top:6px}
+  .gen-result .gr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed #cfe6dd;font-size:13px}
+  .gen-result .gr:last-child{border-bottom:none}
+
+  /* 专注模式 */
+  .focus-modal{position:absolute;inset:0;background:linear-gradient(160deg,#0f2a22,#123b30);z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:30px}
+  .focus-modal.show{display:flex}
+  .focus-timer{font-size:72px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:2px;margin:18px 0}
+  .focus-sub{opacity:.8;font-size:14px;margin-bottom:24px;text-align:center}
+  .focus-ring{width:240px;height:240px;border-radius:50%;border:6px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;position:relative}
+  .focus-controls{display:flex;gap:14px}
+  .fc{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px}
+  .fc.primary{background:var(--primary)}
+
+  /* Toast */
+  .toast{position:absolute;bottom:96px;left:50%;transform:translateX(-50%);background:rgba(20,30,26,.92);color:#fff;padding:11px 18px;border-radius:24px;font-size:13px;z-index:80;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+
+  /* 协同视图 */
+  .collab-head{background:linear-gradient(135deg,var(--accent),#f4731f);border-radius:18px;padding:16px;color:#fff;margin-bottom:14px}
+  .child-card{display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border-radius:14px;box-shadow:var(--shadow);margin-bottom:10px}
+  .warn-pill{display:inline-flex;background:var(--accent-soft);color:#c2550a;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:700;margin:4px 6px 0 0}
+  .class-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+  .class-stat .cs{background:#fff;border-radius:14px;padding:14px;text-align:center;box-shadow:var(--shadow)}
+  .class-stat .cs .v{font-size:22px;font-weight:800;color:var(--primary-dark)}
+  .class-stat .cs .l{font-size:11px;color:var(--muted);margin-top:3px}
+
+  .role-chip{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:#b85a12;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+  .float-note{position:absolute;bottom:88px;right:14px;background:var(--accent);color:#fff;font-size:11px;padding:6px 10px;border-radius:14px;box-shadow:0 6px 14px rgba(255,140,66,.4);z-index:20;display:none}
+  .float-note.show{display:block;animation:fade .3s}
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="screen-wrap">
+    <!-- 状态栏 -->
+    <div class="statusbar">
+      <span id="clock">10:21</span>
+      <span class="icons">
+        <svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="7" width="3" height="5" rx="1" fill="#22332E"/><rect x="4.5" y="5" width="3" height="7" rx="1" fill="#22332E"/><rect x="9" y="2.5" width="3" height="9.5" rx="1" fill="#22332E"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="#22332E"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.2c2.2 0 4.2.8 5.7 2.2l1.3-1.4C13.1 1.1 10.7.2 8 .2S2.9 1.1.9 3l1.3 1.4C3.8 3 5.8 2.2 8 2.2z" fill="#22332E"/><path d="M8 6c1.2 0 2.3.5 3.1 1.3l1.3-1.4C11.2 4.9 9.7 4.2 8 4.2S4.8 4.9 3.6 5.9l1.3 1.4C5.7 6.5 6.8 6 8 6z" fill="#22332E"/><circle cx="8" cy="10" r="2" fill="#22332E"/></svg>
+        <svg width="26" height="13" viewBox="0 0 26 13"><rect x="1" y="1" width="21" height="11" rx="3" fill="none" stroke="#22332E" stroke-width="1.2"/><rect x="3" y="3" width="15" height="7" rx="1.5" fill="#22332E"/><rect x="23" y="4" width="2" height="5" rx="1" fill="#22332E"/></svg>
+      </span>
+    </div>
+
+    <div class="viewport" id="viewport">
+      <!-- ============ 首页 ============ -->
+      <section class="page active" id="page-home">
+        <div class="hero">
+          <div class="greet">早上好 <span class="role-chip">学生</span></div>
+          <h1>小明同学 👋</h1>
+          <div class="streak">🔥 连续打卡 <b id="home-streak">12</b> 天</div>
+        </div>
+
+        <div class="ai-banner" onclick="openWizard()">
+          <div class="ic">🤖</div>
+          <div>
+            <b>AI 帮我规划今日计划</b>
+            <p>基于目标倒推 · 艾宾浩斯复习 · 精力曲线排课</p>
+          </div>
+        </div>
+
+        <div class="stat2">
+          <div class="card">
+            <div class="muted small">距期末考</div>
+            <div class="stat-num">23<span style="font-size:14px">天</span></div>
+            <div class="small muted" style="margin-top:2px">2026-07-08 开考</div>
+          </div>
+          <div class="card">
+            <div class="muted small">本周完成率</div>
+            <div class="stat-num">81<span style="font-size:14px">%</span></div>
+            <div class="small muted" style="margin-top:2px">↑ 较上周 +6%</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row between" style="margin-bottom:6px">
+            <b style="font-size:16px">今日任务</b>
+            <span class="chip" style="background:var(--primary-soft);color:var(--primary-dark)" id="home-progress-txt">3 / 6 完成</span>
+          </div>
+          <div class="ring-wrap" style="margin-bottom:8px">
+            <svg width="54" height="54" viewBox="0 0 54 54">
+              <circle cx="27" cy="27" r="22" fill="none" stroke="#E4EBE8" stroke-width="7"/>
+              <circle id="home-ring" cx="27" cy="27" r="22" fill="none" stroke="#1FA97E" stroke-width="7" stroke-linecap="round" stroke-dasharray="138" stroke-dashoffset="48" transform="rotate(-90 27 27)"/>
+            </svg>
+            <div class="small muted">计划完成率 <b id="home-pct" style="color:var(--primary-dark);font-size:15px">65%</b><br>坚持就是胜利 ✨</div>
+          </div>
+          <div id="home-tasks"></div>
+        </div>
+
+        <div class="card" onclick="goPlan()">
+          <div class="row between">
+            <div class="row"><span style="font-size:22px">📅</span><div><b style="font-size:15px">学习计划日历</b><div class="small muted">周 / 月视图 · 一键打卡</div></div></div>
+            <span class="m-ar">›</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 计划 / 日历 ============ -->
+      <section class="page" id="page-plan">
+        <h2 class="page-title">学习计划</h2>
+        <div class="sub">按天 / 周 / 月管理学习任务</div>
+        <div class="seg">
+          <button class="on" onclick="setCalView('month',this)">月</button>
+          <button onclick="setCalView('week',this)">周</button>
+        </div>
+        <div class="card" id="cal-card">
+          <div class="row between" style="margin-bottom:8px">
+            <b id="cal-title">2026年7月</b>
+            <div class="row">
+              <span class="chip" style="background:var(--accent-soft);color:#b85a12">📌 期末考 D-23</span>
+            </div>
+          </div>
+          <div class="cal">
+            <div class="dow">一</div><div class="dow">二</div><div class="dow">三</div><div class="dow">四</div><div class="dow">五</div><div class="dow">六</div><div class="dow">日</div>
+            <div id="cal-grid"></div>
+          </div>
+        </div>
+        <div class="card day-detail">
+          <h3 id="day-title">今日 · 7月15日 周三</h3>
+          <div id="day-tasks"></div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="openWizard()">＋ 制定学习计划</button>
+      </section>
+
+      <!-- ============ 统计 ============ -->
+      <section class="page" id="page-stats">
+        <h2 class="page-title">学习数据</h2>
+        <div class="sub">数据驱动的学习优化</div>
+
+        <div class="card">
+          <div class="row between"><b style="font-size:15px">学习热力图</b><span class="small muted">近 17 周</span></div>
+          <div class="heat" id="heatmap"></div>
+          <div class="row between small muted" style="margin-top:8px"><span>少</span>
+            <span class="row" style="gap:3px"><i style="width:11px;height:11px;border-radius:3px;background:var(--primary-soft);display:inline-block"></i><i style="width:11px;height:11px;border-radius:3px;background:#BFE6D8;display:inline-block"></i><i style="width:11px;height:11px;border-radius:3px;background:#7FCBB0;display:inline-block"></i><i style="width:11px;height:11px;border-radius:3px;background:#3DAD8A;display:inline-block"></i><i style="width:11px;height:11px;border-radius:3px;background:#15795B;display:inline-block"></i></span>
+            <span>多</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <b style="font-size:15px">学科投入占比</b>
+          <div class="donut-row" style="margin-top:12px">
+            <svg width="110" height="110" viewBox="0 0 110 110" id="donut"></svg>
+            <div class="legend" id="legend"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <b style="font-size:15px">计划完成率趋势</b>
+          <div class="trend" id="trend"></div>
+        </div>
+
+        <div class="card">
+          <div class="row between" style="margin-bottom:10px"><b style="font-size:15px">成就徽章</b><span class="small muted">4 / 8 已解锁</span></div>
+          <div class="badges" id="badges"></div>
+        </div>
+      </section>
+
+      <!-- ============ 我的 ============ -->
+      <section class="page" id="page-profile">
+        <h2 class="page-title">我的</h2>
+        <div class="sub">账号 · 设置 · 协同</div>
+        <div class="profile-card">
+          <div class="avatar" id="p-avatar">明</div>
+          <div style="flex:1">
+            <div class="row between"><b style="font-size:18px" id="p-name">小明</b><span class="role-chip" id="p-role">学生</span></div>
+            <div class="small muted" id="p-info">高二年级 · 实验中学</div>
+            <div class="row" style="margin-top:6px;gap:6px">
+              <span class="chip" style="background:var(--primary-soft);color:var(--primary-dark)">🔥 12天</span>
+              <span class="chip" style="background:var(--accent-soft);color:#b85a12">⭐ Lv.5</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu">
+          <div class="mi" onclick="openWrong()"><span class="m-ic">📕</span><span class="m-t">错题本 · 薄弱点追踪</span><span class="m-ar">›</span></div>
+          <div class="mi" onclick="openFocus()"><span class="m-ic">🎯</span><span class="m-t">专注模式 · 番茄钟</span><span class="m-ar">›</span></div>
+          <div class="mi" onclick="switchRole('家长')"><span class="m-ic">👨‍👩‍👦</span><span class="m-t">家长 / 教师协同</span><span class="m-ar">›</span></div>
+          <div class="mi" onclick="toast('护眼模式已开启 🌿')"><span class="m-ic">🌿</span><span class="m-t">护眼模式</span><span class="m-ar">›</span></div>
+          <div class="mi" onclick="toast('提醒设置：上课/复习/休息')"><span class="m-ic">🔔</span><span class="m-t">提醒设置</span><span class="m-ar">›</span></div>
+        </div>
+
+        <div class="menu">
+          <div class="mi" onclick="toast('AI 学习教练将很快上线 🤖')"><span class="m-ic">🤖</span><span class="m-t">AI 学习教练（高阶）</span><span class="m-ar">›</span></div>
+          <div class="mi" onclick="toast('OCR 作业清单识别（高阶）')"><span class="m-ic">📷</span><span class="m-t">OCR 作业识别（高阶）</span><span class="m-ar">›</span></div>
+        </div>
+        <button class="btn btn-ghost btn-block" onclick="logout()">切换身份 / 退出</button>
+      </section>
+    </div>
+
+    <!-- 底部 Tab -->
+    <div class="tabbar">
+      <button class="tab active" data-page="home" onclick="switchTab('home',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>首页</button>
+      <button class="tab" data-page="plan" onclick="switchTab('plan',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>计划</button>
+      <div class="fab" onclick="openCheckin()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <button class="tab" data-page="stats" onclick="switchTab('stats',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>统计</button>
+      <button class="tab" data-page="profile" onclick="switchTab('profile',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>我的</button>
+    </div>
+
+    <div class="float-note" id="float-note">休息一下，喝口水 💧</div>
+
+    <!-- ===== 角色选择（初始） ===== -->
+    <div class="overlay show" id="role-modal">
+      <div class="sheet" style="border-radius:24px">
+        <div class="handle"></div>
+        <div style="text-align:center;margin-bottom:6px">
+          <div style="font-size:40px">📚</div>
+          <h3 style="margin-top:6px">学伴 StudyBuddy</h3>
+          <p class="small muted">初高中智能学习计划与打卡系统</p>
+        </div>
+        <p class="small" style="text-align:center;margin:10px 0 14px;color:var(--muted)">请选择你的身份进入</p>
+        <div class="opt-grid" style="grid-template-columns:1fr">
+          <div class="opt" onclick="login('学生')"><div class="em">🎒</div><div class="nm">我是学生</div><div class="small muted">制定计划 · 打卡 · 专注学习</div></div>
+          <div class="opt" onclick="login('家长')"><div class="em">👨‍👩‍👦</div><div class="nm">我是家长</div><div class="small muted">查看时长 · 完成率 · 异常提醒</div></div>
+          <div class="opt" onclick="login('老师')"><div class="em">👩‍🏫</div><div class="nm">我是老师</div><div class="small muted">布置任务 · 查看班级数据</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 打卡面板 ===== -->
+    <div class="overlay" id="checkin-sheet">
+      <div class="sheet">
+        <div class="close-x" onclick="closeOverlay('checkin-sheet')">×</div>
+        <div class="handle"></div>
+        <h3>今日打卡</h3>
+        <div class="big-check" id="big-check" onclick="doCheckin()">
+          <div class="n" id="bc-num">✓</div>
+          <div class="t">一键打卡</div>
+        </div>
+        <div class="subj-pick" id="ci-subjects"></div>
+        <div class="mini-row">
+          <button class="btn btn-ghost" onclick="photoCheckin()">📷 拍照打卡</button>
+          <button class="btn btn-primary" onclick="durationCheckin()">⏱ 记时长</button>
+        </div>
+        <div id="ci-log" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <!-- ===== 计划向导 ===== -->
+    <div class="overlay" id="wizard-sheet">
+      <div class="sheet">
+        <div class="close-x" onclick="closeOverlay('wizard-sheet')">×</div>
+        <div class="handle"></div>
+        <h3>制定学习计划</h3>
+        <div class="steps-bar">
+          <div class="s on" id="ws1"></div><div class="s" id="ws2"></div><div class="s" id="ws3"></div>
+        </div>
+        <div class="step on" id="step1">
+          <p class="small muted">第 1 步 / 3 · 设定目标</p>
+          <div class="field"><label>计划周期</label>
+            <select id="w-cycle"><option>今日</option><option selected>本周</option><option>本月</option><option>期末冲刺</option></select></div>
+          <p class="small" style="margin:6px 0">目标科目（薄弱科目将自动加权）</p>
+          <div class="subj-pick" id="w-subjects"></div>
+          <button class="btn btn-primary btn-block" onclick="wizardNext(1)">下一步</button>
+        </div>
+        <div class="step" id="step2">
+          <p class="small muted">第 2 步 / 3 · 任务类型</p>
+          <div class="opt-grid" id="w-types"></div>
+          <div class="field"><label>每日可用时长</label><input id="w-hours" type="number" value="3" min="1" max="8"><span class="small muted">小时 / 天</span></div>
+          <div class="mini-row">
+            <button class="btn btn-ghost" onclick="wizardPrev(2)">上一步</button>
+            <button class="btn btn-primary" onclick="wizardNext(2)">生成计划</button>
+          </div>
+        </div>
+        <div class="step" id="step3">
+          <p class="small muted">第 3 步 / 3 · AI 智能排课结果</p>
+          <div class="gen-result" id="gen-result"></div>
+          <div class="mini-row" style="margin-top:14px">
+            <button class="btn btn-ghost" onclick="wizardPrev(3)">返回</button>
+            <button class="btn btn-primary" onclick="savePlan()">保存到日历 ✓</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 错题本 ===== -->
+    <div class="overlay" id="wrong-sheet">
+      <div class="sheet">
+        <div class="close-x" onclick="closeOverlay('wrong-sheet')">×</div>
+        <div class="handle"></div>
+        <h3>错题本 · 薄弱点追踪</h3>
+        <p class="small muted">拍照识别自动归类知识点 · 定期推送再练</p>
+        <div id="wrong-list" style="margin-top:8px"></div>
+        <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="toast('调用相机拍照识别错题 📷')">＋ 拍照添加错题</button>
+      </div>
+    </div>
+
+    <!-- ===== 家长 / 教师协同 ===== -->
+    <div class="overlay" id="collab-sheet">
+      <div class="sheet">
+        <div class="close-x" onclick="closeOverlay('collab-sheet')">×</div>
+        <div class="handle"></div>
+        <div id="collab-body"></div>
+      </div>
+    </div>
+
+    <!-- ===== 专注模式 ===== -->
+    <div class="focus-modal" id="focus-modal">
+      <div style="font-size:15px;opacity:.85" id="fm-task">专注学习 · 数学</div>
+      <div class="focus-ring">
+        <div style="text-align:center">
+          <div class="focus-timer" id="fm-timer">25:00</div>
+          <div class="small" style="opacity:.7">锁定分心 · 番茄工作法</div>
+        </div>
+      </div>
+      <div class="focus-sub" id="fm-sub">保持专注，每 25 分钟休息 5 分钟</div>
+      <div class="focus-controls">
+        <div class="fc" onclick="closeFocus()">✕</div>
+        <div class="fc primary" id="fm-toggle" onclick="toggleFocus()">▶</div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script>
+/* ============ 数据 ============ */
+const SUBJECTS = {
+  '语文':{c:'#E57373'},'数学':{c:'#5B8DEF'},'英语':{c:'#F2B84B'},'物理':{c:'#9C6ADE'},
+  '化学':{c:'#26C6A4'},'生物':{c:'#66BB6A'},'历史':{c:'#8D6E63'},'地理':{c:'#42A5F5'},'政治':{c:'#EF6FA8'}
+};
+let state = {
+  role:'学生',
+  streak:12,
+  todayTasks:[
+    {id:1,name:'数学·函数专题练习',subj:'数学',time:'19:00-19:45',type:'刷题',done:true},
+    {id:2,name:'英语·Unit5 单词背诵',subj:'英语',time:'19:50-20:20',type:'背诵',done:true},
+    {id:3,name:'物理·牛顿定律复习',subj:'物理',time:'20:30-21:10',type:'复习',done:true},
+    {id:4,name:'化学·实验错题整理',subj:'化学',time:'21:15-21:50',type:'错题整理',done:false},
+    {id:5,name:'语文·古文预习',subj:'语文',time:'21:55-22:20',type:'预习',done:false},
+    {id:6,name:'生物·知识点默写',subj:'生物',time:'22:25-22:45',type:'背诵',done:false},
+  ],
+  checkedToday:false,
+  ciLog:[],
+  wSubjects:[], wTypes:[],
+  focusTimer:null, focusLeft:25*60, focusRunning:false
+};
+
+/* ============ 工具 ============ */
+function $(s){return document.querySelector(s);}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
+function closeOverlay(id){$('#'+id).classList.remove('show');}
+
+/* ============ 时钟 ============ */
+function tick(){const d=new Date();const h=String(d.getHours()).padStart(2,'0');const m=String(d.getMinutes()).padStart(2,'0');$('#clock').textContent=h+':'+m;}
+setInterval(tick,10000);tick();
+
+/* ============ Tab 切换 ============ */
+function switchTab(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('#page-'+page).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  $('#viewport').scrollTop=0;
+}
+function goPlan(){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelector('[data-page="plan"]').classList.add('active');switchTab('plan');}
+
+/* ============ 首页渲染 ============ */
+function renderHome(){
+  const box=$('#home-tasks');box.innerHTML='';
+  let done=0;
+  state.todayTasks.forEach(t=>{
+    if(t.done)done++;
+    const el=document.createElement('div');
+    el.className='task'+(t.done?' done':'');
+    el.innerHTML=`<div class="check ${t.done?'done':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
+      <div class="t-main"><div class="t-name">${t.name}</div>
+      <div class="t-meta"><span class="subj-dot" style="background:${SUBJECTS[t.subj].c}"></span>${t.subj} · ${t.type} · ${t.time}</div></div>`;
+    box.appendChild(el);
+  });
+  const total=state.todayTasks.length;
+  $('#home-progress-txt').textContent=`${done} / ${total} 完成`;
+  const pct=Math.round(done/total*100);
+  $('#home-pct').textContent=pct+'%';
+  const circ=2*Math.PI*22;
+  $('#home-ring').setAttribute('stroke-dashoffset', circ - circ*pct/100);
+}
+function toggleTask(id){
+  const t=state.todayTasks.find(x=>x.id===id);t.done=!t.done;renderHome();renderDayTasks();
+  toast(t.done?'已完成 ✓ 继续保持':'已取消完成');
+}
+
+/* ============ 日历 ============ */
+let calView='month', selDay=15;
+function setCalView(v,el){calView=v;document.querySelectorAll('.seg button').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderCal();}
+function renderCal(){
+  const grid=$('#cal-grid');grid.innerHTML='';
+  $('#cal-title').textContent='2026年7月';
+  // 生成7月网格（7月1日周三 -> 周一为首列，偏移2）
+  const lead=2; // 7/1 是周三，周一首列偏移2
+  for(let i=0;i<lead;i++){const e=document.createElement('div');e.className='day';grid.appendChild(e);}
+  for(let d=1;d<=31;d++){
+    const e=document.createElement('div');
+    e.className='day'+(d===15?' today':'')+(d===selDay?' sel':'');
+    const has=calView==='month'? (d%2===0||d%3===0):(d>=13&&d<=19);
+    e.innerHTML=`${d}<div class="dots">${has?'<i style="background:'+SUBJECTS['数学'].c+'"></i><i style="background:'+SUBJECTS['英语'].c+'"></i>':''}</div>`;
+    e.onclick=()=>{selDay=d;renderCal();renderDayTasks();};
+    grid.appendChild(e);
+  }
+}
+function renderDayTasks(){
+  $('#day-title').textContent=(selDay===15?'今日 · ':'')+`7月${selDay}日`;
+  const box=$('#day-tasks');
+  const sample=[
+    {name:'数学·函数专题练习',subj:'数学',time:'19:00-19:45',type:'刷题',done:selDay<15},
+    {name:'英语·Unit5 单词背诵',subj:'英语',time:'19:50-20:20',type:'背诵',done:selDay<15},
+    {name:'物理·牛顿定律复习',subj:'物理',time:'20:30-21:10',type:'复习',done:selDay<15},
+  ];
+  if(selDay>19){box.innerHTML='<div class="empty">🎉 该日暂无任务，享受休息吧！</div>';return;}
+  box.innerHTML='';
+  sample.forEach(t=>{
+    const el=document.createElement('div');el.className='task'+(t.done?' done':'');
+    el.innerHTML=`<div class="check ${t.done?'done':''}">${t.done?'✓':''}</div>
+      <div class="t-main"><div class="t-name">${t.name}</div>
+      <div class="t-meta"><span class="subj-dot" style="background:${SUBJECTS[t.subj].c}"></span>${t.subj} · ${t.type} · ${t.time}</div></div>
+      <span class="chip" style="background:${t.done?'var(--primary-soft)':'var(--accent-soft)'};color:${t.done?'var(--primary-dark)':'#b85a12'}">${t.done?'已完成':'待做'}</span>`;
+    box.appendChild(el);
+  });
+}
+
+/* ============ 打卡 ============ */
+function openCheckin(){
+  if(state.role!=='学生'){toast('打卡功能仅学生端可用');return;}
+  $('#checkin-sheet').classList.add('show');
+  const box=$('#ci-subjects');box.innerHTML='';
+  Object.keys(SUBJECTS).forEach(s=>{
+    const e=document.createElement('div');e.className='sp';e.textContent=s;
+    e.onclick=()=>e.classList.toggle('on');box.appendChild(e);
+  });
+  $('#bc-num').textContent=state.checkedToday?'✓':'✓';
+}
+function doCheckin(){
+  state.checkedToday=true;
+  $('#big-check').style.background='linear-gradient(135deg,#15795B,#0f5c44)';
+  $('#big-check .t').textContent='今日已打卡';
+  state.ciLog.unshift({t:'一键打卡',time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
+  renderCiLog();toast('打卡成功 🔥 连续 '+state.streak+' 天');
+}
+function photoCheckin(){state.ciLog.unshift({t:'📷 拍照打卡',time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});renderCiLog();toast('拍照打卡已记录');}
+function durationCheckin(){state.ciLog.unshift({t:'⏱ 学习 45 分钟',time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});renderCiLog();toast('已记录学习时长 45 分钟');}
+function renderCiLog(){
+  const box=$('#ci-log');box.innerHTML=state.ciLog.length?'<div class="small muted" style="margin-bottom:6px">今日记录</div>':'';
+  state.ciLog.forEach(l=>{const d=document.createElement('div');d.className='row between small';d.style.padding='6px 0';d.innerHTML=`<span>${l.t}</span><span class="muted">${l.time}</span>`;box.appendChild(d);});
+}
+
+/* ============ 计划向导 ============ */
+function openWizard(){$('#wizard-sheet').classList.add('show');resetWizard();}
+function resetWizard(){document.querySelectorAll('.step').forEach(s=>s.classList.remove('on'));$('#step1').classList.add('on');document.querySelectorAll('.steps-bar .s').forEach(s=>s.classList.remove('on'));$('#ws1').classList.add('on');
+  const ws=$('#w-subjects');ws.innerHTML='';state.wSubjects=[];
+  Object.keys(SUBJECTS).forEach(s=>{const e=document.createElement('div');e.className='sp';e.textContent=s;
+    e.onclick=()=>{e.classList.toggle('on');const i=state.wSubjects.indexOf(s);if(i>=0)state.wSubjects.splice(i,1);else state.wSubjects.push(s);};ws.appendChild(e);});
+  const wt=$('#w-types');wt.innerHTML='';
+  [['作业','📝'],['复习','🔁'],['预习','🔍'],['刷题','✍️'],['错题整理','📕'],['背诵','🗣️'],['模考','📊']].forEach(([n,em])=>{
+    const e=document.createElement('div');e.className='opt';e.innerHTML=`<div class="em">${em}</div><div class="nm">${n}</div>`;
+    e.onclick=()=>{e.classList.toggle('on');const i=state.wTypes.indexOf(n);if(i>=0)state.wTypes.splice(i,1);else state.wTypes.push(n);};wt.appendChild(e);});
+}
+function wizardNext(step){
+  if(step===1){if(state.wSubjects.length===0){toast('请至少选择一科');return;}document.getElementById('step1').classList.remove('on');document.getElementById('step2').classList.add('on');$('#ws2').classList.add('on');}
+  if(step===2){if(state.wTypes.length===0){toast('请至少选择一种任务类型');return;}generatePlan();document.getElementById('step2').classList.remove('on');document.getElementById('step3').classList.add('on');$('#ws3').classList.add('on');}
+}
+function wizardPrev(step){
+  if(step===2){document.getElementById('step2').classList.remove('on');document.getElementById('step1').classList.add('on');$('#ws2').classList.remove('on');}
+  if(step===3){document.getElementById('step3').classList.remove('on');document.getElementById('step2').classList.add('on');$('#ws3').classList.remove('on');}
+}
+function generatePlan(){
+  // 模拟 AI 目标倒推 + 艾宾浩斯 + 精力曲线
+  const weak={'数学':'函数/导数','英语':'语法','物理':'牛顿定律'};
+  const cycle=$('#w-cycle').value;
+  const hours=parseInt($('#w-hours').value)||3;
+  const days=cycle==='今日'?1:cycle==='本周'?7:cycle==='本月'?30:21;
+  let html='';
+  const planDays=Math.min(days,5);
+  for(let i=0;i<planDays;i++){
+    const d='第'+(i+1)+'天';
+    const subj=state.wSubjects[i%state.wSubjects.length];
+    const type=state.wTypes[i%state.wTypes.length];
+    const start=19;const dur=Math.min(Math.floor(hours*0.6*2)/2,2.5);
+    const end=(start+dur).toFixed(1).replace('.0','');
+    const rev=i>0?` · 含第${i}天艾宾浩斯复习`:'';
+    html+=`<div class="gr"><span>${d} ${dur}h</span><span>${subj}·${type}${weak[subj]?'（薄弱:'+weak[subj]+'）':''}${rev}</span></div>`;
+  }
+  html+=`<div class="gr" style="color:var(--primary-dark);font-weight:700"><span>智能排课说明</span><span>上午逻辑科·晚间记忆科·规避单科疲劳</span></div>`;
+  $('#gen-result').innerHTML=html;
+}
+function savePlan(){closeOverlay('wizard-sheet');toast('计划已生成并保存到日历 📅');goPlan();}
+
+/* ============ 统计 ============ */
+function renderStats(){
+  // 热力图
+  const hm=$('#heatmap');hm.innerHTML='';
+  let seed=7;
+  for(let i=0;i<14*17;i++){seed=(seed*9301+49297)%233280;const r=seed/233280;let lv=0;if(r>0.85)lv=4;else if(r>0.7)lv=3;else if(r>0.5)lv=2;else if(r>0.32)lv=1;const e=document.createElement('i');if(lv)e.className='l'+lv;hm.appendChild(e);}
+  // 学科占比 donut
+  const data=[['数学',28],['英语',18],['物理',16],['化学',12],['语文',11],['生物',9],['历史',6]];
+  const total=data.reduce((a,b)=>a+b[1],0);const donut=$('#donut');donut.innerHTML='';
+  let acc=0;const cx=55,cy=55,R=44,r=26;
+  data.forEach(([n,v])=>{
+    const frac=v/total;const a0=acc*2*Math.PI- Math.PI/2;acc+=frac;const a1=acc*2*Math.PI- Math.PI/2;
+    const x0=cx+R*Math.cos(a0),y0=cy+R*Math.sin(a0),x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1);
+    const x0i=cx+r*Math.cos(a0),y0i=cy+r*Math.sin(a0),x1i=cx+r*Math.cos(a1),y1i=cy+r*Math.sin(a1);
+    const large=frac>0.5?1:0;
+    const color=SUBJECTS[n]?SUBJECTS[n].c:'#1FA97E';
+    donut.innerHTML+=`<path d="M${x0} ${y0} A${R} ${R} 0 ${large} 1 ${x1} ${y1} L${x1i} ${y1i} A${r} ${r} 0 ${large} 0 ${x0i} ${y0i} Z" fill="${color}"/>`;
+  });
+  donut.innerHTML+=`<circle cx="55" cy="55" r="20" fill="#fff"/><text x="55" y="52" text-anchor="middle" font-size="11" fill="#7c8c86">本周</text><text x="55" y="64" text-anchor="middle" font-size="13" font-weight="700" fill="#15795B">16.5h</text>`;
+  // legend
+  const lg=$('#legend');lg.innerHTML='';
+  data.forEach(([n,v])=>{lg.innerHTML+=`<div class="li"><span class="subj-dot" style="background:${SUBJECTS[n].c}"></span><span style="width:42px">${n}</span><div class="bar"><span style="width:${v/total*100}%;background:${SUBJECTS[n].c}"></span></div><span class="muted">${v}%</span></div>`;});
+  // trend
+  const tr=$('#trend');tr.innerHTML='';const vals=[62,70,68,75,81,79,84];
+  vals.forEach((v,i)=>{const h=v/100*100;tr.innerHTML+=`<div class="col"><div class="bar2" style="height:${h}px"></div><div class="lab">周${i+1}</div></div>`;});
+  // badges
+  const bd=$('#badges');bd.innerHTML='';
+  [['🔥','连续7天',1],['📚','百题斩',1],['🎯','专注达人',1],['🌟','全勤月',0],['💡','错题王',1],['🏆','年级前十',0],['🌿','护眼卫士',1],['⚡','闪电打卡',0]].forEach(([em,nm,got])=>{
+    bd.innerHTML+=`<div class="badge ${got?'got':''}"><div class="em">${em}</div><div class="nm">${nm}</div></div>`;});
+}
+
+/* ============ 错题本 ============ */
+function openWrong(){
+  $('#wrong-sheet').classList.add('show');
+  const list=$('#wrong-list');list.innerHTML='';
+  const data=[
+    {subj:'数学',kp:'导数·极值',cnt:3,status:'再练'},
+    {subj:'物理',kp:'牛顿第二定律',cnt:2,status:'掌握中'},
+    {subj:'英语',kp:'虚拟语气',cnt:4,status:'再练'},
+    {subj:'化学',kp:'氧化还原反应',cnt:1,status:'已掌握'},
+  ];
+  data.forEach(d=>{
+    const el=document.createElement('div');el.className='child-card';
+    const col={'再练':'var(--accent-soft)','掌握中':'var(--primary-soft)','已掌握':'#e8f5e9'}[d.status];
+    const tcol={'再练':'#b85a12','掌握中':'var(--primary-dark)','已掌握':'#2e7d32'}[d.status];
+    el.innerHTML=`<span class="subj-dot" style="background:${SUBJECTS[d.subj].c};width:14px;height:14px"></span>
+      <div style="flex:1"><b style="font-size:14px">${d.subj} · ${d.kp}</b><div class="small muted">累计错误 ${d.cnt} 次</div></div>
+      <span class="chip" style="background:${col};color:${tcol}">${d.status}</span>`;
+    list.appendChild(el);
+  });
+}
+
+/* ============ 协同（家长/教师） ============ */
+function switchRole(role){
+  if(role==='家长'||role==='老师'){openCollab(role);}
+  else{toast('已切换到学生端');}
+}
+function openCollab(role){
+  $('#collab-sheet').classList.add('show');
+  const body=$('#collab-body');
+  if(role==='家长'){
+    body.innerHTML=`<div class="collab-head"><div class="row between"><b style="font-size:17px">家长视角</b><span class="role-chip" style="background:rgba(255,255,255,.25);color:#fff">小明 · 高二</span></div>
+      <p class="small" style="margin-top:6px;opacity:.9">不暴露学习细节，仅展示关键指标与异常</p></div>
+      <div class="child-card"><div class="avatar" style="width:44px;height:44px;font-size:18px">明</div>
+        <div style="flex:1"><b>今日学习时长</b><div class="small muted">2.6 / 3.0 小时目标</div></div><span class="chip" style="background:var(--primary-soft);color:var(--primary-dark)">87%</span></div>
+      <div class="child-card"><div style="flex:1"><b>本周计划完成率</b><div class="small muted">较上周提升 6%</div></div><span class="chip" style="background:var(--primary-soft);color:var(--primary-dark)">81%</span></div>
+      <div style="margin:10px 0 4px"><b style="font-size:14px">异常提醒</b></div>
+      <div><span class="warn-pill">⚠ 连续2天未打卡化学</span><span class="warn-pill">⚠ 昨晚入睡偏晚</span></div>
+      <button class="btn btn-ghost btn-block" style="margin-top:14px" onclick="toast('已发送鼓励消息 💌')">发送鼓励</button>`;
+  }else{
+    body.innerHTML=`<div class="collab-head" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark))"><div class="row between"><b style="font-size:17px">教师视角</b><span class="role-chip" style="background:rgba(255,255,255,.25);color:#fff">高二(3)班</span></div>
+      <p class="small" style="margin-top:6px;opacity:.9">统一布置任务 · 查看班级整体数据</p></div>
+      <div class="class-stat">
+        <div class="cs"><div class="v">42</div><div class="l">已布置任务</div></div>
+        <div class="cs"><div class="v">86%</div><div class="l">平均完成率</div></div>
+        <div class="cs"><div class="v">73%</div><div class="l">打卡活跃</div></div>
+      </div>
+      <div class="child-card"><div style="flex:1"><b>薄弱知识点预警</b><div class="small muted">全班 函数/导数 错误率偏高</div></div><span class="warn-pill">需强化</span></div>
+      <button class="btn btn-primary btn-block" onclick="toast('已向全班布置周末复习任务 ✓')">＋ 布置统一任务</button>`;
+  }
+}
+
+/* ============ 专注模式 ============ */
+function openFocus(){$('#focus-modal').classList.add('show');resetFocus();}
+function closeFocus(){$('#focus-modal').classList.remove('show');pauseFocus();}
+function resetFocus(){$('#fm-timer').textContent='25:00';focusLeft=25*60;focusRunning=false;$('#fm-toggle').textContent='▶';$('#fm-sub').textContent='保持专注，每 25 分钟休息 5 分钟';}
+function toggleFocus(){if(focusRunning){pauseFocus();}else{startFocus();}}
+function startFocus(){focusRunning=true;$('#fm-toggle').textContent='⏸';
+  focusTimer=setInterval(()=>{focusLeft--;if(focusLeft<0){clearInterval(focusTimer);focusRunning=false;$('#fm-toggle').textContent='▶';showBreak();return;}
+    const m=String(Math.floor(focusLeft/60)).padStart(2,'0');const s=String(focusLeft%60).padStart(2,'0');$('#fm-timer').textContent=m+':'+s;},1000);}
+function pauseFocus(){focusRunning=false;clearInterval(focusTimer);$('#fm-toggle').textContent='▶';}
+function showBreak(){$('#fm-timer').textContent='05:00';$('#fm-sub').textContent='🎉 专注完成！休息 5 分钟，喝口水~';$('#fm-task').textContent='休息中';
+  let b=5*60;const bt=setInterval(()=>{b--;if(b<0){clearInterval(bt);$('#fm-task').textContent='专注学习 · 数学';resetFocus();return;}const m=String(Math.floor(b/60)).padStart(2,'0');const s=String(b%60).padStart(2,'0');$('#fm-timer').textContent=m+':'+s;},1000);}
+
+/* ============ 角色登录 / 退出 ============ */
+function login(role){
+  state.role=role;$('#role-modal').classList.remove('show');
+  if(role==='学生'){
+    $('#p-role').textContent='学生';$('#p-name').textContent='小明';$('#p-info').textContent='高二年级 · 实验中学';
+    document.querySelector('.hero .role-chip').textContent='学生';
+    document.querySelector('.hero .greet').innerHTML='早上好 <span class="role-chip">学生</span>';
+    toast('欢迎回来，小明同学 🎒');
+  }else if(role==='家长'){
+    $('#p-role').textContent='家长';$('#p-name').textContent='王女士';$('#p-info').textContent='小明家长 · 实验中学';
+    toast('家长端已开启 👨‍👩‍👦');openCollab('家长');
+  }else{
+    $('#p-role').textContent='老师';$('#p-name').textContent='李老师';$('#p-info').textContent='高二(3)班 · 班主任';
+    toast('教师端已开启 👩‍🏫');openCollab('老师');
+  }
+}
+function logout(){$('#role-modal').classList.add('show');}
+
+/* ============ 初始化 ============ */
+renderHome();renderCal();renderDayTasks();renderStats();
+// 休息提醒浮动提示（模拟）
+setTimeout(()=>{$('#float-note').classList.add('show');setTimeout(()=>$('#float-note').classList.remove('show'),4000);},6000);
+</script>
+</body>
+</html>

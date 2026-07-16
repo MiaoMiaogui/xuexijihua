@@ -1,0 +1,12 @@
+# 减小 Render / Docker 构建上下文体积，避免把无关目录传上去
+node_modules
+**/node_modules
+backend/node_modules
+mobile-app
+docs
+builds
+.git
+.workbuddy
+*.md
+plan_raw.txt
+index.html

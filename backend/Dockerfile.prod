@@ -1,0 +1,22 @@
+# 多阶段生产镜像：先编译 TS，再仅运行 dist
+# 用法（在 backend/ 目录）：docker build -f Dockerfile.prod -t study-backend .
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci
+COPY tsconfig.json ./
+COPY src ./src
+RUN npm run build
+
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=4000
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
+COPY --from=builder /app/dist ./dist
+# 运行时迁移脚本 migrate.ts 需要读取 db/migrations
+COPY db ./db
+RUN mkdir -p uploads
+EXPOSE 4000
+CMD ["node", "dist/server.js"]

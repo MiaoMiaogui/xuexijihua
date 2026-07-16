@@ -1,0 +1,43 @@
+{
+  "name": "study-app-backend",
+  "version": "1.0.0",
+  "description": "初高中学习计划与打卡 APP 后端服务 (Node.js + Express + MySQL + Redis)",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "db:init": "mysql -u root -p study_app < db/init.sql",
+    "db:setup": "ts-node-dev --transpile-only src/db/setup.ts",
+    "db:migrate": "ts-node-dev --transpile-only src/db/migrate.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "DB_DRIVER=memory vitest run tests/e2e.test.ts",
+    "test:integration": "DB_INTEGRATION=1 vitest run tests/integration.mysql.test.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.0",
+    "redis": "^4.7.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.4",
+    "vitest": "^1.6.0"
+  },
+  "optionalDependencies": {
+    "tesseract.js": "^5.0.0",
+    "openai": "^4.0.0"
+  }
+}

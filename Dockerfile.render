@@ -1,0 +1,30 @@
+# 学伴 StudyBuddy 后端 · Render 自包含部署镜像
+# 单容器内同时运行 Node 20 + MariaDB(兼容 MySQL 8 语法) + Redis，
+# 适合 Render.com 零运维：无需任何外部数据库账号，仅暴露一个 Web Service。
+FROM node:20-bookworm
+
+# 系统依赖：MariaDB 服务端（兼容 init.sql 的 MySQL 8 语法）+ Redis 服务端
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends mariadb-server redis-server \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# 安装依赖（含 devDependencies 以便 tsc 构建；可选依赖 tesseract.js / openai 一并安装）
+COPY backend/package*.json ./
+RUN npm install
+
+# 源码与初始化脚本（从 backend/ 子目录拷贝）
+COPY backend/tsconfig.json ./tsconfig.json
+COPY backend/src ./src
+COPY backend/db ./db
+
+# 编译 TypeScript -> dist
+RUN npm run build
+
+# 启动脚本（起 MySQL / Redis + 初始化库表 + 起 Node）
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
+
+EXPOSE 4000
+CMD ["./start.sh"]

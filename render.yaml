@@ -1,0 +1,18 @@
+# Render Blueprint：一键部署学伴后端（自包含单容器）
+# 用法：Render 控制台 New -> Blueprint -> 连接本仓库，自动按此文件部署。
+services:
+  - type: web
+    name: study-buddy-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile.render
+    plan: free            # 免费档会休眠；升级 starter(付费) 可常驻，更契合"随时可用"
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true   # Render 自动生成并持久化随机密钥（重启后令牌仍有效）
+    # 说明：DB_HOST/DB_PORT/DB_USER/DB_PASS/DB_NAME/REDIS_* 全部由容器 start.sh 内部设定，
+    #       无需在此填写；MySQL/Redis 运行在同一容器内 localhost。
+    # 数据持久化（可选，需付费 plan）：在 Render 控制台为该服务添加 Disk，
+    #       挂载点 /var/lib/mysql，避免重启后演示数据丢失。

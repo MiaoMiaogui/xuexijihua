@@ -1,0 +1,94 @@
+# 学伴 StudyBuddy · 生产编排（云端一键部署，手机随时可连）
+#
+# 四件套：mysql + redis + backend + nginx（反代 / 可选 HTTPS）
+# 手机 App 只需连公网地址 http://<服务器公网IP>/api （或 https://你的域名/api）
+#
+# 用法：
+#   1) cp .env.prod.example .env.prod   # 改 DB_PASS / JWT_SECRET 为强随机值
+#   2) docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+#      （--env-file 让 ${DB_PASS} 等变量从 .env.prod 取值，务必带上）
+#   3) 防火墙放行 80（和 443 若启用 HTTPS）；App 填公网地址即可
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: study_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+      TZ: Asia/Shanghai
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # 首次启动自动建表 + 灌演示账号（仅全新数据卷执行一次）
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASS}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [appnet]
+
+  redis:
+    image: redis:7-alpine
+    container_name: study_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [appnet]
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: study_backend
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      NODE_ENV: production
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+    networks: [appnet]
+    expose:
+      - "4000"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: study_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # 启用 HTTPS 时取消下行注释，并把证书挂到 ./nginx/certs
+      # - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+    networks: [appnet]
+
+volumes:
+  mysql_data:
+  redis_data:
+  uploads_data:
+
+networks:
+  appnet:
+    driver: bridge
