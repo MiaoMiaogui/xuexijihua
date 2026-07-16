@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import cors from 'cors';
+import { pool } from './config/db';
 import authRoutes from './routes/auth';
 import planRoutes from './routes/plans';
 import taskRoutes from './routes/tasks';
@@ -28,6 +29,19 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
 });
 
 app.get('/health', (_req: Request, res: Response) => res.json({ ok: true }));
+
+// 数据库连通性探测（带 5s 超时，避免挂起）
+app.get('/health/db', async (_req: Request, res: Response) => {
+  try {
+    const [rows] = await Promise.race<any>([
+      pool.query('SELECT 1 AS ok'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('db timeout 5s')), 5000)),
+    ]);
+    res.json({ ok: true, db: 'connected', ping: rows?.[0]?.ok });
+  } catch (e: any) {
+    res.status(503).json({ ok: false, db: 'error', message: e?.message || String(e) });
+  }
+});
 
 // 静态资源：OCR 持久化的图片（本地存储时通过 /uploads 访问）
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));

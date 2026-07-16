@@ -5,7 +5,7 @@
 # 即使 DB 初始化失败也会尝试启动服务器（让 /health 能响应）。
 
 echo "[entry] ===== raw env vars for debugging ====="
-env | grep -iE "MYSQL|REDIS|DB_|PORT|DATABASE" | sed 's/PASSWORD=.*/PASSWORD=***REDACTED***/' || echo "(no matching vars)"
+env | grep -iE "MYSQL|REDIS|DB_|PORT|DATABASE" | sed -E 's/(PASSWORD|URL)=.*/\1=***REDACTED***/' || echo "(no matching vars)"
 
 echo "[entry] mapping Railway env vars..."
 
@@ -28,7 +28,9 @@ if [ -z "$DB_PASS" ] && [ -n "$DATABASE_URL" ]; then
   echo "[entry] parsed DATABASE_URL -> host=$DB_HOST port=$DB_PORT user=$DB_USER db=$DB_NAME"
 fi
 
-echo "[entry] DB_HOST=$DB_HOST  DB_PORT=$DB_PORT  DB_USER=$DB_USER  DB_NAME=$DB_NAME"
+echo "[entry] DB_HOST=$DB_HOST  DB_PORT=$DB_PORT  DB_USER=$DB_USER  DB_NAME=$DB_NAME  DB_SSL=${DB_SSL:-true}"
+echo "[entry] REDIS_HOST=${REDIS_HOST:-127.0.0.1}  REDIS_PORT=${REDIS_PORT:-6379}"
+echo "[entry] PORT=${PORT:-4000}"
 
 # === Redis ===
 if [ -n "$REDIS_URL" ]; then
