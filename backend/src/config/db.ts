@@ -16,9 +16,7 @@ export const pool = mysql.createPool({
   connectionLimit: 5,
   charset: 'utf8mb4',
   connectTimeout: 8000,       // 建连超时 8s（Railway 代理约 10s 即 502，需更短）
-  acquireTimeout: 8000,       // 从池获取连接超时 8s
   idleTimeout: 300000,        // 空闲连接回收 5min
-  enableKeepAlive: true,
   keepAliveInitialDelay: 0,
   ...(sslEnabled ? { ssl: { rejectUnauthorized: false } } : {}),
 });
