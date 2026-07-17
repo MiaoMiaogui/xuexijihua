@@ -29,7 +29,7 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
 });
 
 // BUILD_ID 用于确认线上运行的是哪次构建（排查 Railway 镜像缓存问题）
-const BUILD_ID = 'build-20260716-v3-final';
+const BUILD_ID = 'build-20260717-checkins-fix';
 app.get('/health', (_req: Request, res: Response) =>
   res.json({ ok: true, buildId: BUILD_ID, time: new Date().toISOString() }),
 );
