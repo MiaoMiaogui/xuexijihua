@@ -1,7 +1,7 @@
 -- 初高中学习计划与打卡 APP · MySQL 初始化脚本
 -- 数据模型对应方案：User / Subject / Plan / Task / CheckIn / KnowledgePoint / Exam / WeakPoint
-CREATE DATABASE IF NOT EXISTS study_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE study_app;
+-- 注意：表建在「当前连接的数据库」中（由 DB_NAME / Railway 的 MYSQLDATABASE 决定），
+-- 不要硬编码库名，否则 Railway 默认库名 railway 与本地 study_app 不一致会导致建表/查询库错位。
 
 -- ① 用户（学生 / 家长 / 老师 三角色，支持绑定）
 CREATE TABLE users (

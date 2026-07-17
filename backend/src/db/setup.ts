@@ -19,6 +19,7 @@ async function main(): Promise<void> {
     port: Number(process.env.DB_PORT || 3306),
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASS || 'root123',
+    database: process.env.DB_NAME || 'study_app',
     multipleStatements: true,
     ...(sslEnabled ? { ssl: { rejectUnauthorized: false } } : {}),
   });
